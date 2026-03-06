@@ -11,7 +11,7 @@ var serverProcess *exec.Cmd
 
 func Run(buildCmd, execCmd string) {
 
-	stop()
+	Stop()
 
 	slog.Info("building")
 
@@ -39,7 +39,7 @@ func Run(buildCmd, execCmd string) {
 	}
 }
 
-func stop() {
+func Stop() {
 
 	if serverProcess != nil && serverProcess.Process != nil {
 
