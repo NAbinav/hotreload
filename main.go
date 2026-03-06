@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/NAbinav/hotreload/debounce"
 	"github.com/NAbinav/hotreload/runner"
 	"github.com/NAbinav/hotreload/watcher"
 )
@@ -22,16 +24,18 @@ func main() {
 
 	w, err := watcher.New(*root)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "failed to create watcher:", err)
+		fmt.Println("watcher error:", err)
 		os.Exit(1)
 	}
 	defer w.Close()
 
-	// initial build
+	rebuild := debounce.New(500*time.Millisecond, func() {
+		runner.Run(*build, *execCmd)
+	})
+
 	runner.Run(*build, *execCmd)
 
-	// rebuild on every change
 	w.Watch(func() {
-		runner.Run(*build, *execCmd)
+		rebuild()
 	})
 }

@@ -19,10 +19,6 @@ var ignores = []string{
 	".git",
 	"node_modules",
 	"bin",
-	".exe",
-	"~",
-	".tmp",
-	".swp",
 }
 
 func New(root string) (*Watcher, error) {
@@ -35,7 +31,9 @@ func New(root string) (*Watcher, error) {
 		fw:   fw,
 		Root: root,
 	}
-	if err := w.addRecursive(root); err != nil {
+
+	err = w.addRecursive(root)
+	if err != nil {
 		return nil, err
 	}
 
@@ -53,18 +51,23 @@ func shouldIgnore(path string) bool {
 
 func (w *Watcher) addRecursive(root string) error {
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+
 		if err != nil {
 			return err
 		}
+
 		if d.IsDir() {
+
 			if shouldIgnore(path) {
 				return filepath.SkipDir
 			}
+
 			err := w.fw.Add(path)
 			if err != nil {
 				return err
 			}
-			slog.Info("watching directory", "path", path)
+
+			slog.Info("watching", "dir", path)
 		}
 
 		return nil
@@ -81,19 +84,22 @@ func (w *Watcher) Watch(onChange func()) {
 			if shouldIgnore(event.Name) {
 				continue
 			}
+			if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Rename) != 0 {
+				slog.Info("file change", "path", event.Name)
+				onChange()
+			}
 			if event.Op&fsnotify.Create != 0 {
+
 				info, err := os.Stat(event.Name)
+
 				if err == nil && info.IsDir() {
 					w.addRecursive(event.Name)
 				}
 			}
-			slog.Info("file changed", "path", event.Name)
-			onChange()
-		case err, ok := <-w.fw.Errors:
-			if !ok {
-				return
-			}
-			slog.Error("watcher error", "err", err)
+
+		case err := <-w.fw.Errors:
+			slog.Error("watch error", "err", err)
+
 		}
 	}
 }
