@@ -4,21 +4,34 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/NAbinav/hotreload/runner"
+	"github.com/NAbinav/hotreload/watcher"
 )
 
 func main() {
-	root := flag.String("root", ".", "Directory to watch")
-	build := flag.String("build", "", "Build command")
-	exec := flag.String("exec", "", "Exec command")
+	root := flag.String("root", ".", "directory to watch")
+	build := flag.String("build", "", "build command")
+	execCmd := flag.String("exec", "", "run command")
 	flag.Parse()
 
-	if *build == "" || *exec == "" {
-		fmt.Fprintln(os.Stderr, "error: --build and --exec are required")
+	if *build == "" || *execCmd == "" {
+		fmt.Fprintln(os.Stderr, "usage: hotreload --root DIR --build CMD --exec CMD")
 		os.Exit(1)
 	}
 
-	// TODO: wire up watcher
-	fmt.Printf("watching: %s\n", *root)
-	fmt.Printf("build:    %s\n", *build)
-	fmt.Printf("exec:     %s\n", *exec)
+	w, err := watcher.New(*root)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to create watcher:", err)
+		os.Exit(1)
+	}
+	defer w.Close()
+
+	// initial build
+	runner.Run(*build, *execCmd)
+
+	// rebuild on every change
+	w.Watch(func() {
+		runner.Run(*build, *execCmd)
+	})
 }
