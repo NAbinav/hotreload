@@ -41,9 +41,11 @@ func New(root string) (*Watcher, error) {
 }
 
 func shouldIgnore(path string) bool {
-	for _, ig := range ignores {
-		if strings.Contains(path, ig) {
-			return true
+	for _, part := range strings.Split(filepath.ToSlash(path), "/") {
+		for _, ig := range ignores {
+			if part == ig {
+				return true
+			}
 		}
 	}
 	return false
