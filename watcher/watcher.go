@@ -20,6 +20,7 @@ var ignores = []string{
 	".git",
 	"node_modules",
 	"bin",
+	"vendor",
 }
 
 func New(root string) (*Watcher, error) {
@@ -45,6 +46,12 @@ func New(root string) (*Watcher, error) {
 }
 
 func shouldIgnore(path string) bool {
+	base := filepath.Base(path)
+	if strings.HasSuffix(base, ".swp") ||
+		strings.HasSuffix(base, "~") ||
+		strings.HasPrefix(base, "#") {
+		return true
+	}
 	for _, part := range strings.Split(filepath.ToSlash(path), "/") {
 		for _, ig := range ignores {
 			if part == ig {
