@@ -4,17 +4,24 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
+	"time"
 )
 
-var serverProcess *exec.Cmd
+var (
+	mu            sync.Mutex
+	serverProcess *exec.Cmd
+	lastStartTime time.Time
+)
 
 func Run(buildCmd, execCmd string) {
+	mu.Lock()
+	defer mu.Unlock()
 
-	Stop()
+	stop()
 
 	slog.Info("building")
-
 	build := exec.Command("sh", "-c", buildCmd)
 	build.Stdout = os.Stdout
 	build.Stderr = os.Stderr
@@ -24,31 +31,35 @@ func Run(buildCmd, execCmd string) {
 		return
 	}
 
-	slog.Info("starting server")
+	if time.Since(lastStartTime) < time.Second {
+		slog.Warn("server crashed too quickly, skipping restart")
+		return
+	}
 
+	slog.Info("starting server")
 	serverProcess = exec.Command("sh", "-c", execCmd)
 	serverProcess.Stdout = os.Stdout
 	serverProcess.Stderr = os.Stderr
-	serverProcess.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
+	serverProcess.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	err := serverProcess.Start()
-	if err != nil {
+	if err := serverProcess.Start(); err != nil {
 		slog.Error("start failed", "err", err)
+		return
 	}
+	lastStartTime = time.Now()
 }
 
 func Stop() {
+	mu.Lock()
+	defer mu.Unlock()
+	stop()
+}
 
+func stop() { // unexported, call with lock held
 	if serverProcess != nil && serverProcess.Process != nil {
-
 		slog.Info("stopping server")
-
 		syscall.Kill(-serverProcess.Process.Pid, syscall.SIGKILL)
-
 		serverProcess.Wait()
-
 		serverProcess = nil
 	}
 }

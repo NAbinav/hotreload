@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -25,6 +26,9 @@ func New(root string) (*Watcher, error) {
 	fw, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
+	}
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		return nil, fmt.Errorf("root directory %q does not exist", root)
 	}
 
 	w := &Watcher{
@@ -100,6 +104,9 @@ func (w *Watcher) Watch(onChange func()) {
 			}
 
 		case err := <-w.fw.Errors:
+			if strings.Contains(err.Error(), "no such file") {
+				continue
+			}
 			slog.Error("watch error", "err", err)
 
 		}
