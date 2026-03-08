@@ -58,7 +58,7 @@ func Stop() {
 func stop() { // unexported, call with lock held
 	if serverProcess != nil && serverProcess.Process != nil {
 		slog.Info("stopping server")
-		syscall.Kill(-serverProcess.Process.Pid, syscall.SIGKILL)
+		syscall.Kill(-serverProcess.Process.Pid, syscall.SIGTERM)
 		serverProcess.Wait()
 		serverProcess = nil
 	}
