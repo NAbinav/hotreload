@@ -97,6 +97,13 @@ func (w *Watcher) addRecursive(root string) error {
 
 			err := w.fw.Add(path)
 			if err != nil {
+				if strings.Contains(err.Error(), "no space left") ||
+					strings.Contains(err.Error(), "too many open files") {
+					slog.Warn("inotify watch limit reached, some directories may not be watched",
+						"dir", path,
+						"hint", "run: sudo sysctl fs.inotify.max_user_watches=524288")
+					return nil //not hard-fail, just warn
+				}
 				return err
 			}
 

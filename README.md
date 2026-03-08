@@ -8,6 +8,27 @@ A CLI tool that watches a Go project for file changes and automatically rebuilds
 ./hotreload --root <folder> --build "<build command>" --exec "<run command>"
 ```
 
+## Features
+
+### Core
+
+- [x] Triggers first build on start
+- [x] Watches for file changes
+- [x] Rebuilds automatically
+- [x] Restarts server automatically
+- [x] Real-time log streaming
+
+### Bonus
+
+- [x] Recursive subdirectory watching
+- [x] Detects new folders at runtime
+- [x] Debounces rapid saves (500ms)
+- [x] Kills entire process group (no leaked children)
+- [x] Graceful shutdown (SIGTERM → 5s → SIGKILL)
+- [x] Crash loop protection
+- [x] Ignores `.git/`, `node_modules/`, editor temps, etc.
+- [x] inotify watch limit warning
+
 ### Flags
 
 | Flag      | Description                    |
@@ -55,4 +76,4 @@ make demo   # builds and runs against testserver
 make build  # just builds the binary
 ```
 
-Requires Go 1.21+ (uses `log/slog`).
+### Loom video link https://www.loom.com/share/7fc22b3f8bac42b796407ad81daa8f53
