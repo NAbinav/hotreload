@@ -55,11 +55,20 @@ func Stop() {
 	stop()
 }
 
-func stop() { // unexported, call with lock held
-	if serverProcess != nil && serverProcess.Process != nil {
-		slog.Info("stopping server")
-		syscall.Kill(-serverProcess.Process.Pid, syscall.SIGTERM)
-		serverProcess.Wait()
-		serverProcess = nil
+func stop() {
+	if serverProcess == nil || serverProcess.Process == nil {
+		return
 	}
+	slog.Info("stopping server")
+	syscall.Kill(-serverProcess.Process.Pid, syscall.SIGTERM)
+
+	timer := time.AfterFunc(5*time.Second, func() {
+		slog.Warn("process didn't exit, sending SIGKILL")
+		syscall.Kill(-serverProcess.Process.Pid, syscall.SIGKILL)
+	})
+	serverProcess.Wait()
+	timer.Stop()
+
+	serverProcess = nil
+	lastStartTime = time.Time{}
 }
