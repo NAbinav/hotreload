@@ -6,5 +6,5 @@ import (
 )
 
 func HiHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "Hi guys\n")
+	fmt.Fprintf(w, "Hi\n")
 }

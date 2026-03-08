@@ -18,9 +18,24 @@ type Watcher struct {
 
 var ignores = []string{
 	".git",
+	".svn",
+	".hg",
+
 	"node_modules",
-	"bin",
 	"vendor",
+
+	"bin",
+	"dist",
+	"build",
+	"out",
+	"target",
+
+	".idea",
+	".vscode",
+	".DS_Store",
+	"tmp",
+	"temp",
+	".cache",
 }
 
 func New(root string) (*Watcher, error) {
@@ -48,8 +63,13 @@ func New(root string) (*Watcher, error) {
 func shouldIgnore(path string) bool {
 	base := filepath.Base(path)
 	if strings.HasSuffix(base, ".swp") ||
+		strings.HasSuffix(base, ".swo") ||
 		strings.HasSuffix(base, "~") ||
-		strings.HasPrefix(base, "#") {
+		strings.HasSuffix(base, ".tmp") ||
+		strings.HasSuffix(base, ".log") ||
+		strings.HasSuffix(base, ".test") ||
+		strings.HasPrefix(base, "#") ||
+		strings.HasPrefix(base, ".#") {
 		return true
 	}
 	for _, part := range strings.Split(filepath.ToSlash(path), "/") {
